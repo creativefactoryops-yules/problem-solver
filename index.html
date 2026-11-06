@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="theme-color" content="#080b0f"/>
+<title>--force ./buildyou · Problem Solver</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700;800&family=Space+Grotesk:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --black:#080b0f;--deep:#0d1117;--surface:#161b22;--border:#21262d;
+  --moss:#3d5a3e;--moss-mid:#52734d;--moss-light:#7fb069;
+  --acid:#b5ff4d;--mist:#c8d8c0;--white:#f0f4f0;--dim:#6a7870;
+  --mono:'JetBrains Mono',monospace;--sans:'Space Grotesk',sans-serif;
+}
+html{font-size:16px}
+body{background:var(--black);color:var(--white);font-family:var(--sans);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+input,select,textarea,button{font-family:var(--mono)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes ticker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.cursor{display:inline-block;width:8px;height:1em;background:var(--acid);vertical-align:middle;animation:blink 1s step-end infinite;margin-left:2px}
+.spin{animation:spin 1s linear infinite;display:inline-block}
+.fade-up{animation:fadeUp .3s ease both}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:9999}
+.ticker{overflow:hidden;background:var(--deep);border-bottom:1px solid var(--border);padding:7px 0;position:sticky;top:0;z-index:100}
+.ticker-inner{display:flex;animation:ticker 35s linear infinite;width:max-content}
+.ticker-item{font-family:var(--mono);font-size:10px;color:var(--dim);padding:0 20px;white-space:nowrap;border-right:1px solid var(--border);letter-spacing:.04em}
+.page{max-width:720px;margin:0 auto;padding:0 clamp(12px,4vw,24px) 80px}
+.hero{padding:clamp(18px,4vw,36px) clamp(16px,4vw,28px);background:var(--deep);border:1px solid var(--border);border-radius:4px;position:relative;overflow:hidden;margin:16px 0 20px}
+.hero::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--moss-light),var(--acid),transparent)}
+.terminal-bar{display:flex;align-items:center;gap:6px;margin-bottom:16px}
+.dot{width:10px;height:10px;border-radius:50%}
+.dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:var(--moss-light)}
+.term-title{font-family:var(--mono);font-size:10px;color:var(--dim);margin-left:8px;letter-spacing:.5px}
+.prompt{font-family:var(--mono);font-size:11px;color:var(--moss-light);margin-bottom:3px}
+.logo-l{font-family:var(--mono);font-size:clamp(20px,5vw,34px);font-weight:800;line-height:1.05;letter-spacing:-1px}
+.flag{color:var(--dim)}.fv{color:var(--acid)}.path{color:var(--moss-light)}
+.tagline{font-family:var(--mono);font-size:10px;color:var(--dim);margin-top:12px;padding-top:12px;border-top:1px solid var(--border);letter-spacing:.5px}
+.tagline span{color:var(--moss-light)}
+.ollama-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--black);border:1px solid var(--border);border-radius:3px;margin-top:12px}
+.ollama-status{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:10px}
+.status-led{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.status-led.online{background:var(--acid);box-shadow:0 0 6px rgba(181,255,77,.5)}
+.status-led.offline{background:#ef4444;animation:pulse 1.5s infinite}
+.status-led.checking{background:var(--dim);animation:pulse .8s infinite}
+.ollama-model{font-family:var(--mono);font-size:9px;color:var(--dim)}
+.tabs{display:flex;gap:0;background:var(--deep);border:1px solid var(--border);border-radius:3px;margin-bottom:16px;overflow:hidden}
+.tab{flex:1;padding:10px;font-family:var(--mono);font-size:11px;color:var(--dim);background:transparent;border:none;cursor:pointer;border-right:1px solid var(--border);transition:all .15s;letter-spacing:.03em}
+.tab:last-child{border-right:none}
+.tab.on{color:var(--acid);background:rgba(181,255,77,.04)}
+.tab-badge{display:inline-block;background:rgba(181,255,77,.15);color:var(--acid);font-size:9px;padding:1px 5px;border-radius:2px;margin-left:5px}
+.momentum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.mom-card{background:var(--deep);border:1px solid var(--border);border-radius:3px;padding:10px 12px;position:relative;overflow:hidden}
+.mom-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px}
+.mom-card.acid::before{background:var(--acid)}.mom-card.moss::before{background:var(--moss-light)}
+.mom-val{font-family:var(--mono);font-size:clamp(16px,4vw,24px);font-weight:800;color:var(--white);margin-bottom:2px}
+.mom-val.acid{color:var(--acid)}.mom-val.moss{color:var(--moss-light)}
+.mom-label{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:1px;text-transform:uppercase}
+.similar-banner{background:rgba(181,255,77,.03);border:1px solid rgba(181,255,77,.12);border-radius:3px;padding:10px 14px;margin-bottom:14px;animation:slideIn .3s ease}
+.sb-label{font-family:var(--mono);font-size:9px;color:var(--acid);letter-spacing:2px;margin-bottom:8px}
+.sb-item{display:flex;align-items:flex-start;gap:10px;padding:6px 0;border-bottom:1px solid rgba(181,255,77,.06);cursor:pointer}
+.sb-item:last-child{border-bottom:none}
+.sb-item:hover .sb-text{color:var(--acid)}
+.sb-type{font-family:var(--mono);font-size:10px;color:var(--dim);flex-shrink:0}
+.sb-text{font-family:var(--sans);font-size:12px;color:var(--mist);line-height:1.3;flex:1;transition:color .15s}
+.sb-date{font-family:var(--mono);font-size:9px;color:var(--dim);flex-shrink:0}
+.templates{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tpl-btn{font-family:var(--mono);font-size:9px;padding:4px 10px;border-radius:2px;background:transparent;border:1px solid var(--border);color:var(--dim);cursor:pointer;transition:all .15s}
+.tpl-btn:hover{border-color:var(--moss);color:var(--moss-light)}
+.slabel{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:7px;margin-bottom:18px}
+.type-btn{padding:9px 11px;background:var(--surface);border:1px solid var(--border);border-radius:3px;font-family:var(--mono);font-size:11px;color:var(--dim);cursor:pointer;transition:all .15s;text-align:left;position:relative;overflow:hidden}
+.type-btn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;transition:background .15s}
+.type-btn:hover{border-color:var(--moss);color:var(--mist)}
+.type-btn.on{border-color:var(--acid);color:var(--acid);background:rgba(181,255,77,.04)}
+.type-btn.on::before{background:var(--acid)}
+.type-icon{font-size:13px;display:block;margin-bottom:3px}
+.type-label{display:block;font-weight:700;margin-bottom:1px;font-size:10px}
+.type-sub{font-size:9px;color:var(--dim);font-weight:300}
+.type-btn.on .type-sub{color:rgba(181,255,77,.4)}
+.term-input{width:100%;background:var(--deep);border:1px solid var(--border);border-radius:3px;padding:11px 13px;font-family:var(--mono);font-size:12px;color:var(--mist);outline:none;resize:none;transition:border-color .15s;line-height:1.6}
+.term-input:focus{border-color:var(--moss-light)}
+.term-input::placeholder{color:var(--dim)}
+.term-label{font-family:var(--mono);font-size:10px;color:var(--moss-light);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.fsel{width:100%;background:var(--deep);border:1px solid var(--border);border-radius:3px;padding:9px 11px;font-family:var(--mono);font-size:11px;color:var(--mist);outline:none;cursor:pointer}
+.fsel option{background:var(--surface)}
+.exec-btn{width:100%;padding:14px;background:transparent;border:1px solid var(--acid);border-radius:3px;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--acid);cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;letter-spacing:.05em}
+.exec-btn:hover:not(:disabled){background:rgba(181,255,77,.06);box-shadow:0 0 20px rgba(181,255,77,.08)}
+.exec-btn:disabled{border-color:var(--border);color:var(--dim);cursor:not-allowed}
+.kb-hint{font-family:var(--mono);font-size:9px;color:var(--dim);text-align:center;margin-top:6px}
+.fallback-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:#f59e0b;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:2px;padding:3px 8px;margin-bottom:10px}
+.output{animation:fadeUp .3s ease}
+.out-header{background:var(--deep);border:1px solid var(--border);border-radius:4px 4px 0 0;padding:18px 20px;position:relative;overflow:hidden}
+.out-header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--moss),var(--acid),transparent)}
+.out-cmd{font-family:var(--mono);font-size:10px;color:var(--dim);margin-bottom:6px}
+.out-title{font-family:var(--mono);font-size:clamp(13px,3.5vw,18px);font-weight:800;color:var(--white);line-height:1.1;margin-bottom:4px}
+.out-root{font-family:var(--mono);font-size:10px;color:var(--moss-light)}
+.out-body{background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 4px 4px;overflow:hidden}
+.out-sec{border-bottom:1px solid var(--border)}
+.out-sec:last-child{border-bottom:none}
+.sec-tog{width:100%;display:flex;align-items:center;justify-content:space-between;padding:11px 18px;background:transparent;border:none;cursor:pointer;transition:background .15s}
+.sec-tog:hover{background:rgba(255,255,255,.015)}
+.sec-tog-l{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--mist)}
+.sec-body{padding:0 18px 18px}
+.sol-card{background:var(--deep);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-bottom:7px;position:relative;overflow:hidden}
+.sol-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}
+.sol-card.acid::before{background:var(--acid)}
+.sol-card.moss::before{background:var(--moss-light)}
+.sol-card.dim::before{background:var(--dim)}
+.sol-num{font-family:var(--mono);font-size:9px;color:var(--dim);margin-bottom:3px}
+.sol-title{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--white);margin-bottom:5px}
+.sol-desc{font-family:var(--sans);font-size:13px;color:var(--dim);line-height:1.6}
+.sol-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.sol-tag{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px;border:1px solid}
+.sol-tag.el{color:#22c55e;border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
+.sol-tag.em{color:#f59e0b;border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06)}
+.sol-tag.eh{color:#ef4444;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.06)}
+.sol-tag.il{color:var(--dim);border-color:var(--border)}
+.sol-tag.ih{color:var(--acid);border-color:rgba(181,255,77,.3);background:rgba(181,255,77,.06)}
+.sol-tag.im{color:var(--moss-light);border-color:rgba(127,176,105,.3);background:rgba(127,176,105,.06)}
+.bold-move{background:var(--deep);border:1px solid var(--acid);border-radius:3px;padding:14px;position:relative;overflow:hidden}
+.bold-move::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,var(--acid),transparent)}
+.bm-label{font-family:var(--mono);font-size:9px;color:var(--acid);letter-spacing:2px;text-transform:uppercase;margin-bottom:7px}
+.bm-text{font-family:var(--sans);font-size:13px;color:var(--mist);line-height:1.7}
+.next-step{background:rgba(127,176,105,.06);border:1px solid rgba(127,176,105,.2);border-radius:3px;padding:13px 15px}
+.ns-label{font-family:var(--mono);font-size:9px;color:var(--moss-light);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
+.ns-text{font-family:var(--sans);font-size:13px;color:var(--mist);line-height:1.6}
+.code-block{background:var(--black);border:1px solid var(--border);border-radius:3px;padding:12px 14px;font-family:var(--mono);font-size:11px;color:var(--moss-light);line-height:1.7;white-space:pre-wrap;word-break:break-word;margin-bottom:7px}
+.chk-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.chk-item:last-child{border-bottom:none}
+.chk-box{width:15px;height:15px;border:1px solid var(--border);border-radius:2px;flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chk-box.done{border-color:var(--acid);background:rgba(181,255,77,.1)}
+.chk-text{font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.5}
+.chk-text.done{text-decoration:line-through;color:var(--border)}
+.root-cause{background:rgba(181,255,77,.04);border:1px solid rgba(181,255,77,.1);border-radius:3px;padding:12px 14px;margin-bottom:10px}
+.rc-label{font-family:var(--mono);font-size:9px;color:rgba(181,255,77,.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px}
+.rc-text{font-family:var(--sans);font-size:13px;color:var(--mist);line-height:1.6}
+.err-block{background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.2);border-radius:3px;padding:11px 14px;margin-bottom:7px}
+.err-label{font-family:var(--mono);font-size:9px;color:#ef4444;letter-spacing:2px;margin-bottom:5px}
+.err-text{font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.6}
+.err-fix{font-family:var(--mono);font-size:11px;color:var(--moss-light);margin-top:5px}
+.copy-btn{font-family:var(--mono);font-size:9px;color:var(--dim);background:transparent;border:1px solid var(--border);border-radius:2px;padding:3px 7px;cursor:pointer;transition:all .15s;flex-shrink:0}
+.copy-btn:hover{border-color:var(--moss);color:var(--moss-light)}
+.note-area{width:100%;background:var(--black);border:1px solid var(--border);border-radius:3px;padding:9px 11px;font-family:var(--mono);font-size:11px;color:var(--mist);outline:none;resize:none;line-height:1.6;margin-top:7px}
+.note-area:focus{border-color:var(--moss-light)}
+.note-area::placeholder{color:var(--dim)}
+.save-note-btn{font-family:var(--mono);font-size:9px;color:var(--moss-light);background:transparent;border:1px solid rgba(127,176,105,.3);border-radius:2px;padding:4px 9px;cursor:pointer;margin-top:5px;transition:all .15s}
+.save-note-btn:hover{border-color:var(--moss-light);background:rgba(127,176,105,.06)}
+.reset-btn{font-family:var(--mono);font-size:10px;color:var(--dim);background:transparent;border:1px solid var(--border);border-radius:3px;padding:7px 14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;margin-top:14px}
+.reset-btn:hover{border-color:var(--moss);color:var(--moss-light)}
+.hist-item{background:var(--deep);border:1px solid var(--border);border-radius:3px;padding:12px 14px;margin-bottom:7px;position:relative;overflow:hidden;transition:border-color .15s}
+.hist-item:hover{border-color:var(--moss)}
+.hist-item::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--moss)}
+.hist-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:5px}
+.hist-title{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--white);flex:1;line-height:1.3}
+.hist-date{font-family:var(--mono);font-size:9px;color:var(--dim);flex-shrink:0;padding-top:1px}
+.hist-problem{font-family:var(--sans);font-size:12px;color:var(--dim);line-height:1.4;margin-bottom:7px}
+.hist-tags{display:flex;gap:5px;flex-wrap:wrap}
+.hist-tag{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:2px;border:1px solid var(--border);color:var(--dim)}
+.hist-tag.type{color:var(--acid);border-color:rgba(181,255,77,.2)}
+.hist-tag.fw{color:var(--moss-light);border-color:rgba(127,176,105,.2)}
+.hist-tag.fallback{color:#f59e0b;border-color:rgba(245,158,11,.2)}
+.hist-note{font-family:var(--mono);font-size:10px;color:var(--moss-light);margin-top:7px;padding-top:7px;border-top:1px solid var(--border);line-height:1.5}
+.hist-del{font-family:var(--mono);font-size:9px;color:var(--dim);background:transparent;border:none;cursor:pointer;padding:3px 7px;border-radius:2px;transition:all .15s;flex-shrink:0}
+.hist-del:hover{color:#ef4444}
+.search-bar{width:100%;background:var(--deep);border:1px solid var(--border);border-radius:3px;padding:9px 13px;font-family:var(--mono);font-size:11px;color:var(--mist);outline:none;transition:border-color .15s;margin-bottom:14px}
+.search-bar:focus{border-color:var(--moss-light)}
+.search-bar::placeholder{color:var(--dim)}
+.insights-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.insight-card{background:var(--deep);border:1px solid var(--border);border-radius:3px;padding:13px 15px}
+.ic-label{font-family:var(--mono);font-size:9px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.ic-bar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.ic-bar-label{font-family:var(--mono);font-size:10px;color:var(--mist);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ic-bar-track{height:3px;background:var(--border);border-radius:2px;flex:2;position:relative;overflow:hidden}
+.ic-bar-fill{height:100%;background:var(--acid);border-radius:2px;transition:width .6s ease}
+.ic-bar-fill.moss{background:var(--moss-light)}
+.ic-val{font-family:var(--mono);font-size:10px;color:var(--dim);flex-shrink:0;min-width:18px;text-align:right}
+.wins-wall{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.win-chip{font-family:var(--mono);font-size:9px;padding:3px 9px;border-radius:2px;background:rgba(181,255,77,.05);border:1px solid rgba(181,255,77,.12);color:rgba(181,255,77,.6)}
+.streak-display{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(181,255,77,.04);border:1px solid rgba(181,255,77,.1);border-radius:3px;margin-bottom:14px}
+.streak-num{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--acid)}
+.streak-label{font-family:var(--mono);font-size:9px;color:var(--dim)}
+.export-btn{font-family:var(--mono);font-size:10px;color:var(--moss-light);background:transparent;border:1px solid rgba(127,176,105,.3);border-radius:3px;padding:7px 14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px}
+.export-btn:hover{border-color:var(--moss-light);background:rgba(127,176,105,.06)}
+.timer-badge{font-family:var(--mono);font-size:9px;color:var(--dim);background:transparent;border:1px solid var(--border);border-radius:2px;padding:2px 7px}
+.status-bar{position:fixed;bottom:0;left:0;right:0;background:var(--deep);border-top:1px solid var(--border);padding:7px 20px;display:flex;align-items:center;justify-content:space-between;z-index:100}
+.status-l{font-family:var(--mono);font-size:10px;color:var(--dim);display:flex;align-items:center;gap:14px}
+.status-r{font-family:var(--mono);font-size:10px;color:var(--dim)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--acid);display:inline-block;animation:pulse 2s infinite}
+.gen-err{font-family:var(--mono);font-size:10px;color:#ef4444;margin-top:8px;padding:9px 13px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:3px}
+.empty-state{text-align:center;padding:40px 20px}
+.empty-cmd{font-family:var(--mono);font-size:13px;color:var(--dim)}
+.empty-sub{font-family:var(--sans);font-size:12px;color:var(--dim);margin-top:6px;opacity:.6}
+@media(max-width:480px){.row2{grid-template-columns:1fr}.type-grid{grid-template-columns:1fr 1fr}.momentum{grid-template-columns:1fr 1fr}.insights-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="ticker"><div class="ticker-inner" id="ticker"></div></div>
+<div class="page">
+<div class="hero">
+<div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span class="term-title">~/problems — ollama local · creativefactory.studio</span></div>
+<div class="prompt">❯ ollama run mistral "solve --force"</div>
+<div class="prompt" style="color:var(--dim);font-size:10px;margin-bottom:14px">[local] problems solved: <span id="hero-count">0</span> · no api keys · no cloud · all yours</div>
+<div class="logo-l"><span class="flag">--</span><span class="fv">force</span></div>
+<div class="logo-l"><span class="path">./build</span><span style="color:var(--acid)">you</span><span class="cursor"></span></div>
+<div class="tagline"><span>rm -rf doubt</span> · local AI · private · offline-capable · rag database</div>
+<div class="ollama-bar"><div class="ollama-status"><div class="status-led checking" id="ollama-led"></div><span id="ollama-label" style="color:var(--dim)">checking ollama...</span></div><span class="ollama-model" id="ollama-model">—</span></div>
+</div>
+<div id="root"></div>
+</div>
+<div class="status-bar"><div class="status-l"><span><span class="status-dot"></span> READY</span><span>--force ./buildyou</span><span id="rag-count">rag: 0 entries</span></div><div class="status-r" id="status-r">LOCAL · PRIVATE</div></div>
+<script>
+const tickItems=["deploy issue","code error","creative block","brand identity","ADHD workflow","revenue model","launch strategy","feature scope","naming problem","audience gap","rag database","local AI","no api keys","private","offline mode","momentum tracking","pattern detection","knowledge base"];
+const tk=document.getElementById('ticker');
+[...tickItems,...tickItems].forEach(i=>{const s=document.createElement('span');s.className='ticker-item';const acid=["deploy","code","error","rag","local"].some(x=>i.includes(x));s.innerHTML=`<span style="color:${acid?"var(--acid)":"var(--moss-light)"}">❯ </span><span style="color:var(--dim)">${i}</span>`;tk.appendChild(s)});
+const OLLAMA_MODELS=['llama3.2','llama3','mistral','phi3','codellama','qwen2.5','gemma2','deepseek-r1'];
+let ollamaOnline=false, activeModel='';
+async function checkOllama(){
+  const led=document.getElementById('ollama-led');const lbl=document.getElementById('ollama-label');const mdl=document.getElementById('ollama-model');
+  try{
+    const r=await fetch('http://localhost:11434/api/tags',{signal:AbortSignal.timeout(3000)});
+    const d=await r.json();const models=(d.models||[]).map(m=>m.name.split(':')[0]);
+    activeModel=OLLAMA_MODELS.find(m=>models.includes(m))||models[0]||'mistral';ollamaOnline=true;
+    led.className='status-led online';lbl.textContent='ollama online';lbl.style.color='var(--acid)';mdl.textContent=`model: ${activeModel}`;
+    document.getElementById('status-r').textContent=`OLLAMA · ${activeModel.toUpperCase()}`;
+  }catch{ollamaOnline=false;led.className='status-led offline';lbl.textContent='ollama offline — smart fallback active';lbl.style.color='#f59e0b';mdl.textContent='fallback mode';document.getElementById('status-r').textContent='FALLBACK · LOCAL';}
+}
+checkOllama();setInterval(checkOllama,30000);
+</script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const {useState,useEffect,useCallback,useRef}=React;
+const PROBLEM_TYPES=[
+  {id:"deploy",icon:"🚀",label:"Deploy Issue",sub:"won't ship",color:"#ef4444"},
+  {id:"code",icon:"🐛",label:"Code Error",sub:"broken build",color:"#f59e0b"},
+  {id:"creative",icon:"💡",label:"Creative Block",sub:"stuck in void",color:"#b5ff4d"},
+  {id:"brand",icon:"✦",label:"Brand Problem",sub:"identity crisis",color:"#7fb069"},
+  {id:"adhd",icon:"⚡",label:"ADHD / Focus",sub:"brain offline",color:"#8b5cf6"},
+  {id:"revenue",icon:"💰",label:"Revenue / Pricing",sub:"money architecture",color:"#7fb069"},
+  {id:"launch",icon:"📡",label:"Launch Strategy",sub:"when & how",color:"#b5ff4d"},
+  {id:"scope",icon:"🗂",label:"Feature Scope",sub:"too much",color:"#f59e0b"},
+  {id:"audience",icon:"🎯",label:"Audience / Niche",sub:"who is this for",color:"#7fb069"},
+  {id:"content",icon:"📝",label:"Content Strategy",sub:"what to say",color:"#b5ff4d"},
+  {id:"naming",icon:"🏷",label:"Naming / Copy",sub:"words are hard",color:"#7fb069"},
+  {id:"general",icon:"🔧",label:"General Problem",sub:"other",color:"#6a7870"},
+];
+const FRAMEWORKS=[
+  {id:"rm_rf",label:"rm -rf doubt",desc:"Brute force brainstorm"},
+  {id:"first",label:"--first-principles",desc:"Strip to base truth"},
+  {id:"reverse",label:"--reverse",desc:"Solve the opposite"},
+  {id:"fork",label:"git fork + patch",desc:"Borrow from other domains"},
+  {id:"debug",label:"debug mode",desc:"Trace the actual error"},
+  {id:"scamper",label:"SCAMPER patch",desc:"Substitute, Combine..."},
+];
+const DEPTHS=[{id:"quick",label:"quick fix",desc:"3 solutions fast"},{id:"deep",label:"deep dive",desc:"7-10 solutions"},{id:"nuclear",label:"nuclear",desc:"full breakdown"}];
+const TEMPLATES={
+  deploy:[
+    {label:"netlify hugo error",text:"netlify deploy failing with 'hugo: command not found' or build command error"},
+    {label:"env var missing",text:"environment variable not found in production but works locally"},
+    {label:"CORS error",text:"CORS error when calling API from deployed frontend"},
+  ],
+  code:[
+    {label:"TypeError undefined",text:"TypeError: Cannot read properties of undefined reading a property"},
+    {label:"module not found",text:"Module not found or import error after install"},
+    {label:"infinite loop",text:"Component re-renders infinitely or useEffect runs on every render"},
+  ],
+  adhd:[
+    {label:"can't start",text:"I have multiple tasks open, feel overwhelmed and can't pick one to start"},
+    {label:"lost thread",text:"I forgot what I was doing mid-task and can't get back into it"},
+    {label:"too many ideas",text:"Too many new ideas, can't focus on finishing what I started"},
+  ],
+  revenue:[
+    {label:"what to charge",text:"I don't know what to charge for my SaaS tool, scared to price too high or low"},
+    {label:"freemium gate",text:"What should be free vs paid in my freemium product"},
+    {label:"first customer",text:"How do I get my first paying customer with no audience"},
+  ],
+};
+function generateFallback(type,framework,problem,depth){
+  const pt=PROBLEM_TYPES.find(p=>p.id===type);const fw=FRAMEWORKS.find(f=>f.id===framework);
+  const numSolutions=depth==="quick"?3:depth==="deep"?7:10;
+  const solutionSets={
+    deploy:[
+      {title:"Check build logs line by line",description:"The error is always in the last 20 lines of the build log. Find the first red line and Google it verbatim.",effort:"Low",impact:"High",tag:"debug"},
+      {title:"Clear cache and force redeploy",description:"In Netlify: Site settings → Build & deploy → Clear cache and retry deploy.",effort:"Low",impact:"Medium",tag:"quick-fix"},
+      {title:"Test build locally first",description:"Run your build command locally before deploying.",effort:"Medium",impact:"High",tag:"prevention"},
+      {title:"Check environment variables",description:"Missing env vars are the #1 silent deploy killer.",effort:"Low",impact:"High",tag:"env"},
+      {title:"Simplify to a static deploy",description:"Remove all build steps. Deploy raw HTML/CSS/JS directly.",effort:"Medium",impact:"High",tag:"simplify"},
+      {title:"Check Node version mismatch",description:"Add a .nvmrc file or set NODE_VERSION to match your local version.",effort:"Low",impact:"Medium",tag:"version"},
+      {title:"Deploy to a fresh site",description:"Create a new blank Netlify site and deploy just the essentials.",effort:"Medium",impact:"Medium",tag:"isolation"},
+    ],
+    code:[
+      {title:"console.log everything",description:"Add console.log before every line that could be undefined.",effort:"Low",impact:"High",tag:"debug"},
+      {title:"Read the error message literally",description:"Copy the exact error message and search it. Someone has had this exact error.",effort:"Low",impact:"High",tag:"search"},
+      {title:"Comment out half the code",description:"Binary search the bug. Comment out 50%. If error persists, bug is in the other 50%.",effort:"Low",impact:"High",tag:"isolation"},
+      {title:"Check the import path",description:"Case-sensitive file paths break on Linux even if they work on Mac.",effort:"Low",impact:"Medium",tag:"imports"},
+      {title:"Restart everything",description:"Kill the dev server. Clear node_modules. npm install again.",effort:"Low",impact:"Medium",tag:"restart"},
+      {title:"Write a minimal reproduction",description:"Create the smallest possible version that still has the bug.",effort:"Medium",impact:"High",tag:"debug"},
+    ],
+    adhd:[
+      {title:"Pick the 2-minute task first",description:"Find ONE thing under 2 minutes. Do only that. Completion triggers dopamine.",effort:"Low",impact:"High",tag:"momentum"},
+      {title:"Close everything except one tab",description:"Close all browsers, apps, tabs. One thing. 25-minute timer.",effort:"Low",impact:"High",tag:"environment"},
+      {title:"Write it down before doing it",description:"Write in one sentence what you are doing and why.",effort:"Low",impact:"High",tag:"anchor"},
+      {title:"Shrink the task to be ridiculous",description:"'Build the app' becomes 'open the file'. Make the first step embarrassingly small.",effort:"Low",impact:"High",tag:"scope"},
+    ],
+    creative:[
+      {title:"Change the constraint",description:"Add a bizarre constraint: 'solve this in one sentence'. Constraints force creativity.",effort:"Low",impact:"High",tag:"reframe"},
+      {title:"Write the worst version first",description:"Write the worst possible solution intentionally. Then improve it.",effort:"Low",impact:"Medium",tag:"momentum"},
+      {title:"Time-box to 20 minutes",description:"Make a decision in 20 minutes. Ship it. You can improve it.",effort:"Low",impact:"High",tag:"ship"},
+    ],
+    revenue:[
+      {title:"Charge 3x what feels comfortable",description:"Your instinct is to undercharge. Test higher before accepting your fear.",effort:"Low",impact:"High",tag:"pricing"},
+      {title:"One price. Simple.",description:"One tier. No free plan. Add tiers after 10 paying customers.",effort:"Low",impact:"High",tag:"simplify"},
+      {title:"Price per outcome not per feature",description:"'Save 3 hours/week' justifies $50/mo. 'Has 12 features' justifies nothing.",effort:"Low",impact:"High",tag:"framing"},
+    ],
+    launch:[
+      {title:"Launch before you're ready",description:"The version you're embarrassed about is the right version to launch.",effort:"Low",impact:"High",tag:"ship"},
+      {title:"Tell 10 people directly",description:"Message 10 specific people. Not a post. Direct.",effort:"Low",impact:"High",tag:"outreach"},
+      {title:"Post your build in public",description:"Tweet progress while building. Launch day you have an audience.",effort:"Low",impact:"High",tag:"build-in-public"},
+    ],
+    general:[
+      {title:"State the problem precisely",description:"Write it in one sentence. If you can't, it's not clear enough yet.",effort:"Low",impact:"High",tag:"clarity"},
+      {title:"Invert the problem",description:"What would make this worse? Do the opposite.",effort:"Low",impact:"Medium",tag:"invert"},
+      {title:"Constrain to 24 hours",description:"What's the version you could ship in 24 hours?",effort:"Low",impact:"High",tag:"ship"},
+    ],
+  };
+  const pool=solutionSets[type]||solutionSets.general;
+  return {
+    reframe:`${pt?.label}: framed as a solvable mission`,
+    rootCause:`Most ${type} problems come from unclear constraints or environment mismatch.`,
+    solutions:pool.slice(0,numSolutions),
+    boldMove:"Delete the feature entirely. Ship without it. See if anyone asks for it.",
+    checklist:[`Define the problem in one sentence`,`Apply solution[0] first`,`Test and log the result`,`Ship or iterate`],
+    nextStep:`Start with solution[0]: "${pool[0]?.title}". Next 20 minutes.`,
+    _fallback:true,
+  };
+}
+async function callOllama(prompt,model){
+  const r=await fetch('http://localhost:11434/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages:[{role:'user',content:prompt}],stream:false,options:{temperature:.7,num_predict:1500}}),signal:AbortSignal.timeout(45000)});
+  if(!r.ok)throw new Error('Ollama error');const d=await r.json();return d.message?.content||'';
+}
+const DB_KEY='buildyou_rag_v2';
+function loadDB(){try{return JSON.parse(localStorage.getItem(DB_KEY)||'[]')}catch{return[]}}
+function saveDB(e){localStorage.setItem(DB_KEY,JSON.stringify(e))}
+function addEntry(e){const db=loadDB();db.unshift({...e,id:Date.now(),date:new Date().toISOString()});saveDB(db);return db}
+function updateNote(id,note){const db=loadDB();const i=db.findIndex(e=>e.id===id);if(i>-1){db[i].note=note;saveDB(db)}return db}
+function deleteEntry(id){const db=loadDB().filter(e=>e.id!==id);saveDB(db);return db}
+function tokenize(s){return(s||'').toLowerCase().split(/\W+/).filter(w=>w.length>3)}
+function similarity(a,b){const ta=new Set(tokenize(a));const tb=new Set(tokenize(b));const inter=[...ta].filter(x=>tb.has(x));return inter.length/(Math.sqrt(ta.size)*Math.sqrt(tb.size)||1)}
+function findSimilar(problem,db){return db.map(e=>({...e,score:similarity(problem,e.problem)})).filter(e=>e.score>0.1).sort((a,b)=>b.score-a.score).slice(0,3)}
+function fmtDate(iso){const d=new Date(iso),diff=Math.floor((Date.now()-d)/86400000);if(diff===0)return'today';if(diff===1)return'yesterday';if(diff<7)return`${diff}d ago`;return d.toLocaleDateString('en-CA',{month:'short',day:'numeric'})}
+function App(){
+  const [tab,setTab]=useState('solve');const [type,setType]=useState('');const [framework,setFramework]=useState('rm_rf');
+  const [depth,setDepth]=useState('deep');const [problem,setProblem]=useState('');const [context,setContext]=useState('');
+  const [loading,setLoading]=useState(false);const [result,setResult]=useState(null);const [db,setDb]=useState(loadDB());
+  const [currentId,setCurrentId]=useState(null);const [similar,setSimilar]=useState([]);const [elapsed,setElapsed]=useState(null);
+  const [search,setSearch]=useState('');const startTime=useRef(null);
+  useEffect(()=>{document.getElementById('hero-count').textContent=db.length;document.getElementById('rag-count').textContent=`rag: ${db.length} entries`},[db]);
+  useEffect(()=>{if(problem.length>20&&db.length>0)setSimilar(findSimilar(problem,db));else setSimilar([])},[problem]);
+  const solve=async()=>{
+    if(!type||!problem.trim()||loading)return;
+    setLoading(true);setResult(null);setElapsed(null);startTime.current=Date.now();
+    let parsed=null;
+    if(ollamaOnline){try{
+      const pt=PROBLEM_TYPES.find(p=>p.id===type);
+      const raw=await callOllama(`Solve this ${pt?.label} problem: ${problem}. ${context} Return JSON: {"reframe":"...","rootCause":"...","solutions":[{"title":"...","description":"...","effort":"Low","impact":"High"}],"boldMove":"...","checklist":["..."],"nextStep":"..."}`,activeModel);
+      const clean=raw.replace(/```json|```/g,'').trim();const s=clean.indexOf('{'),e=clean.lastIndexOf('}');
+      if(s!==-1&&e!==-1)parsed=JSON.parse(clean.slice(s,e+1));
+    }catch(err){}}
+    if(!parsed)parsed=generateFallback(type,framework,problem,depth);
+    setElapsed(Math.round((Date.now()-startTime.current)/1000));setResult(parsed);
+    const newDb=addEntry({type,framework,depth,problem,context,result:parsed});setDb(newDb);setCurrentId(newDb[0].id);setLoading(false);
+  };
+  const ec=v=>v==='Low'?'el':v==='High'?'eh':'em';
+  return <div>
+    <div className="tabs">
+      <button className={`tab${tab==='solve'?' on':''}`} onClick={()=>setTab('solve')}>❯ solve</button>
+      <button className={`tab${tab==='history'?' on':''}`} onClick={()=>setTab('history')}>❯ history{db.length>0&&<span className="tab-badge">{db.length}</span>}</button>
+    </div>
+    {tab==='solve'&&<div>
+      {!result?<div style={{background:'var(--deep)',border:'1px solid var(--border)',borderRadius:4,padding:'clamp(14px,4vw,24px)',marginBottom:14}}>
+        <div className="slabel">// select problem type</div>
+        <div className="type-grid">{PROBLEM_TYPES.map(pt=><button key={pt.id} className={`type-btn${type===pt.id?' on':''}`} onClick={()=>setType(pt.id)}><span className="type-icon">{pt.icon}</span><span className="type-label">{pt.label}</span><span className="type-sub">{pt.sub}</span></button>)}</div>
+        {similar.length>0&&<div className="similar-banner"><div className="sb-label">// rag match</div>{similar.map(e=><div key={e.id} className="sb-item" onClick={()=>{setType(e.type);setProblem(e.problem);setResult(e.result);setCurrentId(e.id);}}><span className="sb-type">{PROBLEM_TYPES.find(p=>p.id===e.type)?.icon}</span><span className="sb-text">{e.result?.reframe||e.problem?.slice(0,80)}</span><span className="sb-date">{fmtDate(e.date)}</span></div>)}</div>}
+        <div style={{marginBottom:14}}><div className="term-label">❯ describe your problem</div><textarea className="term-input" rows={4} value={problem} onChange={e=>setProblem(e.target.value)} placeholder="what's blocking you?"/></div>
+        <div style={{marginBottom:16}}><div className="term-label">❯ context <span style={{color:'var(--dim)'}}>(optional)</span></div><textarea className="term-input" rows={2} value={context} onChange={e=>setContext(e.target.value)} placeholder="stack, constraints, what you've tried..."/></div>
+        <div className="row2">
+          <div><div className="term-label">❯ --framework</div><select className="fsel" value={framework} onChange={e=>setFramework(e.target.value)}>{FRAMEWORKS.map(f=><option key={f.id} value={f.id}>{f.label}</option>)}</select></div>
+          <div><div className="term-label">❯ --depth</div><select className="fsel" value={depth} onChange={e=>setDepth(e.target.value)}>{DEPTHS.map(d=><option key={d.id} value={d.id}>{d.label}</option>)}</select></div>
+        </div>
+        <button className="exec-btn" disabled={!type||!problem.trim()||loading} onClick={solve}>{loading?<><span className="spin">↻</span> solving...</>:<>❯ --force solve --execute</>}</button>
+        <div className="kb-hint">works offline with smart fallback · connects to ollama when available</div>
+      </div>:
+      <div className="output">
+        {result._fallback&&<div className="fallback-badge">⚠ smart fallback — install ollama for AI responses</div>}
+        <div className="out-header"><div className="out-cmd">❯ --force solve --type={type}</div><div className="out-title">{result.reframe}</div><div className="out-root">{result.solutions?.length} solutions · saved to rag</div></div>
+        <div className="out-body">
+          <div style={{padding:'14px 18px'}}><div className="root-cause"><div className="rc-label">// root cause</div><div className="rc-text">{result.rootCause}</div></div></div>
+          <div style={{padding:'0 18px 14px'}}>{result.solutions?.map((s,i)=><div key={i} className={`sol-card ${i===0?'acid':i%2?'moss':'dim'}`}><div className="sol-num">solution[{i}]</div><div className="sol-title">{s.title}</div><div className="sol-desc">{s.description}</div><div className="sol-tags"><span className={`sol-tag ${ec(s.effort)}`}>effort:{s.effort}</span><span className={`sol-tag ${ec(s.impact)}`}>impact:{s.impact}</span></div></div>)}</div>
+          <div style={{padding:'0 18px 14px'}}><div className="bold-move"><div className="bm-label">// bold move</div><div className="bm-text">{result.boldMove}</div></div></div>
+          <div style={{padding:'0 18px 14px'}}><div className="next-step"><div className="ns-label">// execute now</div><div className="ns-text">{result.nextStep}</div></div></div>
+        </div>
+        <button className="reset-btn" onClick={()=>{setResult(null);setProblem('');setContext('');setType('')}}>↺ reset</button>
+      </div>}
+    </div>}
+    {tab==='history'&&<div>
+      <input className="search-bar" placeholder="❯ search history" value={search} onChange={e=>setSearch(e.target.value)}/>
+      {db.filter(e=>!search||e.problem?.toLowerCase().includes(search.toLowerCase())).map(e=><div key={e.id} className="hist-item">
+        <div className="hist-top"><div className="hist-title">{e.result?.reframe||'Untitled'}</div><div style={{display:'flex',gap:7,alignItems:'center'}}><span className="hist-date">{fmtDate(e.date)}</span><button className="hist-del" onClick={()=>setDb(deleteEntry(e.id))}>✕</button></div></div>
+        <div className="hist-problem">{e.problem?.slice(0,120)}</div>
+        <div className="hist-tags"><span className="hist-tag type">{e.type}</span><span className="hist-tag fw">{e.framework}</span></div>
+        <div style={{marginTop:8}}><button className="save-note-btn" onClick={()=>{setType(e.type);setProblem(e.problem);setResult(e.result);setTab('solve')}}>❯ reload</button></div>
+      </div>)}
+    </div>}
+  </div>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
